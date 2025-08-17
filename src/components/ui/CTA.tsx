@@ -22,7 +22,7 @@ export function CTA({
             disabled={loading || props.disabled}
             className={cn(
                 // base styles
-                "inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-sm",
+                "inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-md not-italic font-semibold leading-[100%] tracking-[-0.32px]",
                 // color variants
                 variant === "primary" &&
                 "bg-[#8952fc] text-white hover:bg-[#7b40fc] transition-colors",
