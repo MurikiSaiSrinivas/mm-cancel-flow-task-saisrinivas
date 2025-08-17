@@ -25,13 +25,13 @@ export function CTA({
                 "inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-md not-italic font-semibold leading-[100%] tracking-[-0.32px]",
                 // color variants
                 variant === "primary" &&
-                "bg-[#8952fc] text-white hover:bg-[#7b40fc] transition-colors",
+                "bg-[var(--brand-migrate-mate)] text-white hover:bg-[var(--brand-purple-1)] transition-colors",
                 variant === "secondary" &&
-                "border-2 border-[#E6E6E6] text-[#62605C] hover:bg-[#E6E6E6] transition-colors",
+                "border-2 border-[var(--gray-warm-300)] text-[var(--gray-warm-700)] hover:bg-[var(--gray-warm-300)] transition-colors",
                 variant === "success" &&
-                "bg-[#4ABF71] text-white hover:bg-[#3ea360] transition-colors",
+                "bg-[var(--theme-success)] text-white hover:bg-[var(--theme-success-1)] transition-colors",
                 variant === "danger" &&
-                "bg-[#DC2626] text-white hover:bg-[#bf2222] transition-colors",//
+                "bg-[var(--theme-danger)] text-white hover:bg-[var(--theme-danger-1)] transition-colors",
                 // extra classes passed from caller
                 className
             )}

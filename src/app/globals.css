@@ -3,6 +3,29 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand */
+  --brand-migrate-mate: #996EFF;
+
+  /* Gray / Warm */
+  --gray-warm-100: #F5F5F5;
+  --gray-warm-200: #F0F0F0;
+  --gray-warm-300: #E6E6E6;
+  --gray-warm-500: #B0AEAA;
+  --gray-warm-700: #62605C;
+  --gray-warm-800: #41403D;
+
+  /* Theme - Success */
+  --theme-success: #4ABF71;
+  --theme-success-1: #2F7E48;/* dark tint (bg for success alerts) */
+
+  /* Theme - Danger */
+  --theme-danger: #FF3B30;
+  --theme-danger-1: #B2271E;/* darker tint */
+
+  /* Extra brand tints */
+  --brand-purple-1: #A87EFC;
+  --brand-purple-2: #EBE1FE;
 }
 
 @theme inline {
@@ -10,6 +33,29 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+
+  /* Brand */
+  --color-brand-migrate-mate: var(--brand-migrate-mate);
+
+  /* Gray / Warm */
+  --color-gray-warm-100: var(--gray-warm-100);
+  --color-gray-warm-200: var(--gray-warm-200);
+  --color-gray-warm-300: var(--gray-warm-300);
+  --color-gray-warm-500: var(--gray-warm-500);
+  --color-gray-warm-700: var(--gray-warm-700);
+  --color-gray-warm-800: var(--gray-warm-800);
+
+  /* Theme */
+  --color-theme-success: var(--theme-success);
+  --color-theme-success-1: var(--theme-success-1);
+
+  --color-theme-danger: var(--theme-danger);
+  --color-theme-danger-1: var(--theme-danger-1);
+
+  /* Extra brand tints */
+  --color-brand-purple-1: var(--brand-purple-1);
+  --color-brand-purple-2: var(--brand-purple-2);
 }
 
 @media (prefers-color-scheme: dark) {
