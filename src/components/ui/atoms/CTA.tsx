@@ -22,7 +22,7 @@ export function CTA({
             disabled={loading || props.disabled}
             className={cn(
                 // base styles
-                "inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-md not-italic font-semibold leading-[100%] tracking-[-0.32px]",
+                "inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-md not-italic !font-sans font-semibold leading-[100%] tracking-[-0.32px]",
                 // color variants
                 variant === "primary" &&
                 "bg-[var(--brand-migrate-mate)] text-white hover:bg-[var(--brand-purple-1)] transition-colors",
@@ -32,6 +32,11 @@ export function CTA({
                 "bg-[var(--theme-success)] text-white hover:bg-[var(--theme-success-1)] transition-colors",
                 variant === "danger" &&
                 "bg-[var(--theme-danger)] text-white hover:bg-[var(--theme-danger-1)] transition-colors",
+                // disabled state
+                (loading || props.disabled) &&
+                "!bg-[var(--gray-warm-300)] !text-[var(--gray-warm-500)] !cursor-not-allowed !hover:bg-[var(--gray-warm-300)]",
+                // cursor pointer
+                "cursor-pointer",
                 // extra classes passed from caller
                 className
             )}
