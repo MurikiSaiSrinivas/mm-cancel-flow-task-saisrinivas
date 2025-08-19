@@ -16,6 +16,9 @@ const BodySchema = z.object({
     reason: z.string().trim().min(1).max(2000),
 });
 
+const COOKIE = 'mm_downsell_variant';
+
+
 export async function POST(req: Request) {
     const userId = process.env.MOCK_USER_ID!;
     const body = await req.json();
@@ -36,15 +39,29 @@ export async function POST(req: Request) {
     if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
     // 2) Update subscription status based on outcome
+    // app/api/cancel/complete/route.ts (only the update part changed)
     const newStatus = dto.accepted_downsell ? 'active' : 'cancelled' as const;
 
-    const { error: updErr } = await supabase
+    const { data: updRows, error: updErr } = await supabase
         .from('subscriptions')
         .update({ status: newStatus })
         .eq('id', dto.subscription_id)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');                 // <- forces returning rows
 
-    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+    if (updErr) {
+        return NextResponse.json({ error: updErr.message }, { status: 500 });
+    }
+    if (!updRows || updRows.length === 0) {
+        // subscription_id didn't belong to userId (or not found)
+        return NextResponse.json({ error: 'Subscription not found for user' }, { status: 404 });
+    }
 
-    return NextResponse.json({ ok: true, status: newStatus });
+
+    const res = NextResponse.json({ ok: true, status: newStatus });
+
+    // ❗️Delete the A/B cookie so the next test re-assigns a fresh variant
+    res.cookies.delete(COOKIE);
+
+    return res;
 }
