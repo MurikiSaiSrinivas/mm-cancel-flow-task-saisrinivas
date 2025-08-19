@@ -1,5 +1,5 @@
 import * as React from "react";
-import { TwoColumnCard } from "@/components/ui/TowColumnCard";
+import { TwoColumnCard } from "@/components/ui/features/cancelflow/TowColumnCard";
 import { Radio } from "@/components/ui/atoms/Radio";
 import TextInput from "@/components/ui/atoms/TextInput";
 import { CTA } from "@/components/ui/atoms/CTA";

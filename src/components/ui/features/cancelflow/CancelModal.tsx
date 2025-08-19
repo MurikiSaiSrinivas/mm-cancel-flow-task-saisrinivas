@@ -20,7 +20,7 @@ import SubscriptionCancelledCard from "@/components/ui/organisms/cards/Subscript
 import CancelOfferAcceptedCard from "@/components/ui/organisms/cards/CancelOfferAccepted";
 
 // Store
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { useAppDispatch, useAppSelector } from "../../../../store/hooks";
 import {
     closeModal,
     selectCancel,
@@ -32,64 +32,148 @@ import {
     setReason,
     setVisa,
     setStep,
-    setAbVariant,
-    setPlanCents,
-} from "../../store/cancelFlowSlice";
+} from "../../../../store/cancelFlowSlice";
+import { useAssignVariant } from "./hooks/useAssignVariant";
+import { useCompleteOnTerminalStep } from "./hooks/useCompleteOnTerminalStep";
+import { computeOffer, money } from "./lib";
+import { useStartCancellation } from "./hooks/useStartCancellation";
 
 
-const money = (cents?: number) =>
-    `$${((cents ?? 0) / 100).toFixed(2)}`;
+// Money formatter
+// const money = (cents?: number) => `$${((cents ?? 0) / 100).toFixed(2)}`;
 
-function computeOffer(ab: 'A' | 'B' | undefined, planCents?: number) {
-    const plan = planCents ?? 2500; // fallback to $25.00
-    const headline =
-        ab === 'B'
-            ? 'Stay for $10 less while you search.'
-            : 'Here’s 50% off until you find a job.'; // A or undefined -> 50%
+// // Build a reason string for DB from current Redux state
+// function buildReasonFromState(cancel: ReturnType<typeof selectCancel>): string {
+//     // If user accepted the downsell offer
+//     if (cancel.offerAccepted) {
+//         const plan = cancel.planCents ?? 2500;
+//         const oldPrice = money(plan);
+//         const isB = cancel.abVariant === 'B';
+//         const newCents = isB ? Math.max(plan - 1000, 0) : Math.floor(plan / 2);
+//         const newPrice = money(newCents);
+//         const label = isB ? '$10 off' : '50% off';
+//         return `Accepted downsell (${cancel.abVariant ?? 'A'} – ${label}): ${oldPrice} → ${newPrice}.`;
+//     }
 
-    const priceWas = money(plan);
-    const priceNow = ab === 'B'
-        ? money(Math.max(plan - 1000, 0))  // $10 off
-        : money(Math.floor(plan / 2));     // 50% off
+//     // Found job (visa path terminals)
+//     if (cancel.foundJob) {
+//         const bits = [
+//             cancel.visa?.visa ? `visa=${cancel.visa?.visa}` : null,
+//             cancel.visa?.hasLawyer ? `hasLawyer=${cancel.visa?.hasLawyer}` : null,
+//             cancel.survey?.foundWithMigrateMate ? `foundWithMM=${cancel.survey?.foundWithMigrateMate}` : null,
+//         ].filter(Boolean);
+//         const wish = cancel.wishText ? `; wish="${cancel.wishText}"` : '';
+//         return `Found job${bits.length ? ' (' + bits.join(', ') + ')' : ''}${wish}`;
+//     }
 
-    return { headline, priceWas, priceNow };
-}
+//     // No job (reason card path)
+//     if (cancel.reason?.reason) {
+//         const map: Record<string, string> = {
+//             too_expensive: 'Too expensive',
+//             not_helpful: 'Not helpful',
+//             not_relevant: 'Not relevant',
+//             not_moving: "I'm not moving",
+//             other: 'Other',
+//         };
+//         let base = map[cancel.reason.reason] ?? 'Other';
+//         if (cancel.reason.amount) base += `; amount=${cancel.reason.amount}`;
+//         if (cancel.reason.details) base += `; details="${cancel.reason.details}"`;
+//         return base;
+//     }
+
+//     return 'No reason provided';
+// }
+
+// // Compute A/B offer copy + prices
+// function computeOffer(ab: 'A' | 'B' | undefined, planCents?: number) {
+//     const plan = planCents ?? 2500; // fallback $25
+//     const headline =
+//         ab === 'B'
+//             ? 'Stay for $10 less while you search.'
+//             : 'Here’s 50% off until you find a job.'; // A or undefined
+
+//     const priceWas = money(plan);
+//     const priceNow = ab === 'B' ? money(Math.max(plan - 1000, 0)) : money(Math.floor(plan / 2));
+//     return { headline, priceWas, priceNow };
+// }
 
 
 export default function CancelModal() {
 
     const dispatch = useAppDispatch();
     const cancel = useAppSelector(selectCancel);
+    const stepper = useAppSelector(selectStepper);
+
+    useAssignVariant();
+    const subId = useStartCancellation();
+    useCompleteOnTerminalStep(cancel.step, subId, cancel);
+
     const { headline, priceWas, priceNow } = React.useMemo(
         () => computeOffer(cancel.abVariant, cancel.planCents),
         [cancel.abVariant, cancel.planCents]
     );
 
-    const stepper = useAppSelector(selectStepper);
+    // // 1) Assign AB on first open
+    // React.useEffect(() => {
+    //     fetch('/api/cancel/assign', { method: 'POST' })
+    //         .then(r => r.json())
+    //         .then(({ variant }) => {
+    //             console.log('variant', variant);
+    //             dispatch(setAbVariant(variant))
+    //         });
+    // }, [dispatch]);
 
-    const [subId, setSubId] = React.useState<string | undefined>(undefined);
+    // // 2) Mark subscription pending + get plan price
+    // React.useEffect(() => {
+    //     fetch('/api/cancel/start', { method: 'POST' })
+    //         .then(r => r.json())
+    //         .then((json) => {
+    //             if (json?.price_cents) dispatch(setPlanCents(json.price_cents));
+    //             // store subscription_id locally to send on complete
+    //             if (json?.subscription_id) setSubId(json.subscription_id); // see local state below
+    //         });
+    // }, [dispatch]);
 
+    // Ensure we only write one row even if user bounces around terminals
+    // const completedRef = React.useRef(false);
 
+    // async function completeOnce() {
+    //     if (completedRef.current) return;
+    //     if (!subId) return; // wait until /start returned
 
-    // 1) Assign AB on first open
-    React.useEffect(() => {
-        fetch('/api/cancel/assign', { method: 'POST' })
-            .then(r => r.json())
-            .then(({ variant }) => dispatch(setAbVariant(variant)));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    //     completedRef.current = true;
 
-    // 2) Mark subscription pending + get plan price
-    React.useEffect(() => {
-        fetch('/api/cancel/start', { method: 'POST' })
-            .then(r => r.json())
-            .then((json) => {
-                if (json?.price_cents) dispatch(setPlanCents(json.price_cents));
-                // store subscription_id locally to send on complete
-                if (json?.subscription_id) setSubId(json.subscription_id); // see local state below
-            });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dispatch]);
+    //     const payload = {
+    //         subscription_id: subId,
+    //         accepted_downsell: !!cancel.offerAccepted,
+    //         downsell_variant: (cancel.abVariant ?? 'A') as 'A' | 'B',
+    //         reason: buildReasonFromState(cancel),
+    //     };
+
+    //     try {
+    //         await fetch('/api/cancel/complete', {
+    //             method: 'POST',
+    //             headers: { 'content-type': 'application/json' },
+    //             body: JSON.stringify(payload),
+    //         });
+    //     } catch (e) {
+    //         console.error('complete failed', e);
+    //     }
+    // }
+
+    // // Whenever we ENTER a terminal step, write completion
+    // React.useEffect(() => {
+    //     const terminalSteps = new Set([
+    //         'accepted.offer',              // accepted the offer
+    //         'complete.subscriptionEnded',  // cancelled, no job
+    //         'complete.withVisa',           // found job, with visa
+    //         'complete.noVisa',             // found job, without visa
+    //     ]);
+    //     if (terminalSteps.has(cancel.step as any)) {
+    //         completeOnce();
+    //     }
+    // }, [cancel.step, subId]); // note: depends on step & subId only
+
 
 
 
@@ -124,7 +208,6 @@ export default function CancelModal() {
         "accepted.offer": "Subscription Continued",
         "continued.subscription": "Subscription Continued",
     };
-    console.log(stepper);
     return (
         <Modal open={cancel.open} onClose={() => dispatch(closeModal())} size="lg" ariaLabel="Cancel subscription">
             <ModalHeader
@@ -211,6 +294,19 @@ export default function CancelModal() {
                         onAcceptOffer={() => dispatch(acceptOffer())}
                         initial={cancel.reason}
                         onChange={(p: any) => dispatch(setReason(p))}
+                        onCompleteCancel={(payload: any) => {
+                            dispatch(setReason(payload));
+                            dispatch(setStep('complete.subscriptionEnded')); // entering terminal triggers completeOnce()
+                        }}
+                    />
+                )}
+
+                {/* {cancel.step === 'reason' && (
+                    <CancelReasonCard
+                        priceLabel={money(cancel.planCents ?? 2500)}
+                        onAcceptOffer={() => dispatch(acceptOffer())}
+                        initial={cancel.reason}
+                        onChange={(p: any) => dispatch(setReason(p))}
                         onCompleteCancel={async (payload: { reason?: string; amount?: string; details?: string }) => {
                             // 1) pick a single reason string
                             const reasonText =
@@ -235,7 +331,7 @@ export default function CancelModal() {
                             dispatch(setStep('complete.subscriptionEnded'));
                         }}
                     />
-                )}
+                )} */}
 
                 {/* {cancel.step === "reason" && (
                     <CancelReasonCard
@@ -248,44 +344,6 @@ export default function CancelModal() {
                         }}
                         initial={cancel.reason}
                         onChange={(p: any) => dispatch(setReason(p))}
-                    />
-                )} */}
-                {/* {cancel.step === 'reason' && (
-                    <CancelReasonCard
-                        priceLabel={money(cancel.planCents ?? 2500)}
-                        onAcceptOffer={() => dispatch(acceptOffer())}
-                        initial={cancel.reason}
-                        onChange={(p: any) => dispatch(setReason(p))}
-                        onCompleteCancel={async (payload: { reason?: string; amount?: string; details?: string }) => {
-                            // 1) keep Redux in sync
-                            dispatch(setReason({
-                                reason: payload.reason as "too_expensive" | "not_helpful" | "not_relevant" | "not_moving" | "other" | undefined,
-                                amount: payload.amount,
-                                details: payload.details
-                            }));
-
-                            // 2) pick a single reason string (prefer details > amount > reason)
-                            const reasonText =
-                                (payload.details && String(payload.details).trim()) ||
-                                (payload.amount && String(payload.amount).trim()) ||
-                                (payload.reason && String(payload.reason).trim()) ||
-                                'No reason provided';
-
-                            // 3) POST to API
-                            await fetch('/api/cancel/complete', {
-                                method: 'POST',
-                                headers: { 'content-type': 'application/json' },
-                                body: JSON.stringify({
-                                    subscription_id: subId,                          // from /api/cancel/start
-                                    accepted_downsell: !!cancel.offerAccepted,       // from Redux
-                                    downsell_variant: cancel.abVariant ?? 'A',       // A | B
-                                    reason: reasonText,                               // sanitized server-side
-                                }),
-                            });
-
-                            // 4) move to the final screen
-                            dispatch(setStep('complete.subscriptionEnded'));
-                        }}
                     />
                 )} */}
 

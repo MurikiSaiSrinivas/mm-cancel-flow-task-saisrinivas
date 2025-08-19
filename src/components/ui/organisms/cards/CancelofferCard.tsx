@@ -1,6 +1,6 @@
 // components/cards/OfferCard.tsx
 import * as React from "react";
-import { TwoColumnCard } from "@/components/ui/TowColumnCard";
+import { TwoColumnCard } from "@/components/ui/features/cancelflow/TowColumnCard";
 import { CTA } from "@/components/ui/atoms/CTA";
 import DiscountBanner from "@/components/ui/molecules/DiscountBanner";
 

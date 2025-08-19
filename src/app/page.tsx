@@ -1,6 +1,6 @@
 'use client';
 
-import CancelModal from '@/components/ui/CancelModal';
+import CancelModal from '@/components/ui/features/cancelflow/CancelModal';
 import { openModal } from '@/store/cancelFlowSlice';
 import { useAppDispatch } from '@/store/hooks';
 import { useState } from 'react';

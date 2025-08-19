@@ -1,6 +1,6 @@
 // components/cards/CancelCard.tsx
 import * as React from "react";
-import { TwoColumnCard } from "@/components/ui/TowColumnCard";
+import { TwoColumnCard } from "@/components/ui/features/cancelflow/TowColumnCard";
 import { CTA } from "@/components/ui/atoms/CTA";
 
 type Props = {

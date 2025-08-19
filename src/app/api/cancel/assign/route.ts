@@ -14,6 +14,7 @@ export async function POST() {
     const buf = new Uint32Array(1);
     crypto.getRandomValues(buf);
     const variant: V = (buf[0] % 2 === 0) ? 'A' : 'B';
+    console.log('variant', variant);
 
     const res = NextResponse.json({ variant });
     res.cookies.set({
