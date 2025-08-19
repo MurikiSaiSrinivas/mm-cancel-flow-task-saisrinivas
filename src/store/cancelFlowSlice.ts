@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+export type DownsellVariant = 'A' | 'B';
 
 
 export type CancelStep =
@@ -48,6 +49,8 @@ export interface CancelFlowState {
     reason: ReasonState;
     visa: VisaState;
     endDate?: string; // e.g. "Oct 12, 2025"
+    abVariant?: DownsellVariant;   // 'A' or 'B'
+    planCents?: number; // 2500, 2900, 3900
 }
 
 
@@ -57,6 +60,8 @@ const initialState: CancelFlowState = {
     survey: {},
     reason: {},
     visa: {},
+    abVariant: undefined,
+    planCents: undefined,
 };
 
 
@@ -102,6 +107,13 @@ const slice = createSlice({
 
 
         setEndDate(state, action: PayloadAction<string | undefined>) { state.endDate = action.payload; },
+
+        setAbVariant(state, action: PayloadAction<DownsellVariant>) {
+            state.abVariant = action.payload;
+        },
+        setPlanCents(state, action: PayloadAction<number | undefined>) {
+            state.planCents = action.payload;
+        },
     },
 });
 
@@ -118,6 +130,8 @@ export const {
     setReason,
     setVisa,
     setEndDate,
+    setAbVariant,
+    setPlanCents,
 } = slice.actions;
 export default slice.reducer;
 
