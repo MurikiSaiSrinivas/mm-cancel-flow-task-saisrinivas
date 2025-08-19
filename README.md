@@ -1,6 +1,24 @@
 # Migrate Mate - Subscription Cancellation Flow Challenge
 👉 For architecture overview, file structure and key implementation notes, see the **[Implementation Notes (What I built)](#implementation-notes-what-i-built)** section near the bottom of this document.
 
+## 📝 PS Note
+
+**Important Setup Reminders:**
+
+1. **Environment Variables**: Make sure to create a `.env.local` file with your Supabase credentials:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   MOCK_USER_ID=user_id_you_want_to_test_with
+   ```
+
+2. **Testing the Cancellation Flow**: 
+   - Set `MOCK_USER_ID` to a valid user ID from your database to test subscription cancellation
+   - On the home page, click "Cancel Migrate" button
+   - A modal will popup to start the cancellation flow
+
+3. **Database Setup**: Ensure you've run the `seed.sql` file to populate your Supabase database with test users and the cancellations table structure.
+
 
 ## Overview
 
