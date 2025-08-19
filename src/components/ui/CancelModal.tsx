@@ -37,11 +37,38 @@ import {
 } from "../../store/cancelFlowSlice";
 
 
+const money = (cents?: number) =>
+    `$${((cents ?? 0) / 100).toFixed(2)}`;
+
+function computeOffer(ab: 'A' | 'B' | undefined, planCents?: number) {
+    const plan = planCents ?? 2500; // fallback to $25.00
+    const headline =
+        ab === 'B'
+            ? 'Stay for $10 less while you search.'
+            : 'Here’s 50% off until you find a job.'; // A or undefined -> 50%
+
+    const priceWas = money(plan);
+    const priceNow = ab === 'B'
+        ? money(Math.max(plan - 1000, 0))  // $10 off
+        : money(Math.floor(plan / 2));     // 50% off
+
+    return { headline, priceWas, priceNow };
+}
+
+
 export default function CancelModal() {
 
     const dispatch = useAppDispatch();
     const cancel = useAppSelector(selectCancel);
+    const { headline, priceWas, priceNow } = React.useMemo(
+        () => computeOffer(cancel.abVariant, cancel.planCents),
+        [cancel.abVariant, cancel.planCents]
+    );
+
     const stepper = useAppSelector(selectStepper);
+
+    const [subId, setSubId] = React.useState<string | undefined>(undefined);
+
 
 
     // 1) Assign AB on first open
@@ -59,10 +86,10 @@ export default function CancelModal() {
             .then((json) => {
                 if (json?.price_cents) dispatch(setPlanCents(json.price_cents));
                 // store subscription_id locally to send on complete
-                setSubId(json.subscription_id); // see local state below
+                if (json?.subscription_id) setSubId(json.subscription_id); // see local state below
             });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [dispatch]);
 
 
 
@@ -133,6 +160,9 @@ export default function CancelModal() {
                 {cancel.step === "offer" && (
                     <CancelOfferCard
                         imageUrl="/empire-state-compressed.jpg"
+                        headline={headline}
+                        priceWas={priceWas}
+                        priceNow={priceNow}
                         onAccept={() => dispatch(acceptOffer())}
                         onDecline={() => dispatch(setStep("survey.noJob"))}
                     />
@@ -175,7 +205,39 @@ export default function CancelModal() {
                 )}
 
                 {/* Step 4 - NO JOB - Cancel Reason */}
-                {cancel.step === "reason" && (
+                {cancel.step === 'reason' && (
+                    <CancelReasonCard
+                        priceLabel={money(cancel.planCents ?? 2500)}
+                        onAcceptOffer={() => dispatch(acceptOffer())}
+                        initial={cancel.reason}
+                        onChange={(p: any) => dispatch(setReason(p))}
+                        onCompleteCancel={async (payload: { reason?: string; amount?: string; details?: string }) => {
+                            // 1) pick a single reason string
+                            const reasonText =
+                                (payload.details && String(payload.details).trim()) ||
+                                (payload.amount && String(payload.amount).trim()) ||
+                                (payload.reason && String(payload.reason).trim()) ||
+                                'No reason provided';
+
+                            // 2) send to API
+                            await fetch('/api/cancel/complete', {
+                                method: 'POST',
+                                headers: { 'content-type': 'application/json' },
+                                body: JSON.stringify({
+                                    subscription_id: subId,
+                                    accepted_downsell: !!cancel.offerAccepted,
+                                    downsell_variant: cancel.abVariant ?? 'A',
+                                    reason: reasonText,
+                                }),
+                            });
+
+                            // 3) move to final screen
+                            dispatch(setStep('complete.subscriptionEnded'));
+                        }}
+                    />
+                )}
+
+                {/* {cancel.step === "reason" && (
                     <CancelReasonCard
                         imageUrl="/empire-state-compressed.jpg"
                         priceLabel="$12.50"
@@ -187,7 +249,46 @@ export default function CancelModal() {
                         initial={cancel.reason}
                         onChange={(p: any) => dispatch(setReason(p))}
                     />
-                )}
+                )} */}
+                {/* {cancel.step === 'reason' && (
+                    <CancelReasonCard
+                        priceLabel={money(cancel.planCents ?? 2500)}
+                        onAcceptOffer={() => dispatch(acceptOffer())}
+                        initial={cancel.reason}
+                        onChange={(p: any) => dispatch(setReason(p))}
+                        onCompleteCancel={async (payload: { reason?: string; amount?: string; details?: string }) => {
+                            // 1) keep Redux in sync
+                            dispatch(setReason({
+                                reason: payload.reason as "too_expensive" | "not_helpful" | "not_relevant" | "not_moving" | "other" | undefined,
+                                amount: payload.amount,
+                                details: payload.details
+                            }));
+
+                            // 2) pick a single reason string (prefer details > amount > reason)
+                            const reasonText =
+                                (payload.details && String(payload.details).trim()) ||
+                                (payload.amount && String(payload.amount).trim()) ||
+                                (payload.reason && String(payload.reason).trim()) ||
+                                'No reason provided';
+
+                            // 3) POST to API
+                            await fetch('/api/cancel/complete', {
+                                method: 'POST',
+                                headers: { 'content-type': 'application/json' },
+                                body: JSON.stringify({
+                                    subscription_id: subId,                          // from /api/cancel/start
+                                    accepted_downsell: !!cancel.offerAccepted,       // from Redux
+                                    downsell_variant: cancel.abVariant ?? 'A',       // A | B
+                                    reason: reasonText,                               // sanitized server-side
+                                }),
+                            });
+
+                            // 4) move to the final screen
+                            dispatch(setStep('complete.subscriptionEnded'));
+                        }}
+                    />
+                )} */}
+
 
                 {/* Step 4 - YES JOB - Visa Support */}
                 {cancel.step === "visa" && (
