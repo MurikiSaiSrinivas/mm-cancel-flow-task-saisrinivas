@@ -18,7 +18,9 @@
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
     "redux": "^5.0.1",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "xss": "^1.0.15",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
