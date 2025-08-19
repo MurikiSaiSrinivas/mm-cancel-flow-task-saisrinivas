@@ -45,7 +45,7 @@ export function Stepper({
                 })}
             </ul>
 
-            <span className="ml-[12px] text-[var(--gray-warm-700)] font-normal text-[14px] leading-[100%] tracking-[-0.28px] font-[var(--font-dm-sans,_inherit)]">
+            <span className="ml-[12px] text-[var(--gray-warm-700)] font-normal text-[14px] leading-[100%] tracking-[-0.28px] font-[var(--font-sans,_inherit)]">
                 {isCompleted ? "Completed" : `${labelPrefix} ${current} of ${total}`}
             </span>
 
